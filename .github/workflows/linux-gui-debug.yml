@@ -34,7 +34,10 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           python3 -B tools/linux_release.py prepare --stage /tmp/stage --cache /tmp/cache
       - name: Variants
+        continue-on-error: true
+        shell: bash
         run: |
+          set +e
           R=/tmp/stage/1401
           try() { echo "=== $1"; shift; env XDG_DATA_HOME=/tmp/x "$@" xvfb-run -a "$R/1401" --verify-package /tmp/v.json >/tmp/out.txt 2>&1; echo "exit $?"; tail -5 /tmp/out.txt; }
           try "default"
@@ -43,7 +46,9 @@ jobs:
           try "no X11 fallback libraries" XDG_CACHE_HOME=/nonexistent-cache
           try "software OpenGL" QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
       - name: Backtrace
+        shell: bash
         run: |
+          set +e
           R=/tmp/stage/1401
           export A1401_HOME=$R PYTHONPATH=$R/app XDG_DATA_HOME=/tmp/x QT_QPA_PLATFORM=xcb LD_LIBRARY_PATH=$HOME/.cache/1401/x11-fallback
           xvfb-run -a gdb -batch -ex run -ex bt -ex "info sharedlibrary" --args $R/engine/python/bin/python3 -m a1401 --verify-package /tmp/v.json 2>&1 | grep -v "^\[New Thread\|^\[Thread" | tail -150
