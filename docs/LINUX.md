@@ -78,3 +78,7 @@ python3 tools/linux_release.py prepare --stage /tmp/stage --cache /tmp/cache   #
 xvfb-run python3 tools/linux_release.py check --stage /tmp/stage --output /tmp/evidence.json
 python3 tools/linux_release.py package --stage /tmp/stage --evidence /tmp/evidence.json --output dist
 ```
+
+Releases: publishing a GitHub release tagged `linux-v<version>` (matching `linux/release-inputs.json`) runs
+`.github/workflows/linux-release.yml`, which builds and checks the package from that commit and attaches the archive,
+`SHA256SUMS.txt` and `linux-verification.json` to the release.

@@ -1,0 +1,43 @@
+name: Linux release assets
+
+# Publish a release whose tag starts with linux-v (for example linux-v1.1.0, on the commit to ship). This workflow then
+# builds the package from that commit with the pinned inputs, runs the packaged checks, and attaches
+# 1401-Linux-<version>-x86_64.tar.gz, SHA256SUMS.txt and linux-verification.json to the release.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  assets:
+    if: startsWith(github.event.release.tag_name, 'linux-v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Check out the released commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb dosfstools zstd binutils libgl1 libegl1 libopengl0 libfontconfig1 libxkbcommon0 \
+            libxkbcommon-x11-0 libdbus-1-3 libx11-xcb1 libxcb-render0 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 \
+            libxcb-randr0 libxcb-glx0 libwayland-client0 libwayland-cursor0 libwayland-egl1
+      - name: The tag names the packaged version
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('linux/release-inputs.json'))['version'])")
+          test "$TAG" = "linux-v$version" || { echo "Tag $TAG does not match version $version"; exit 1; }
+      - name: Prepare, verify and package
+        run: |
+          python3 -B tools/linux_release.py prepare --stage "$RUNNER_TEMP/stage" --cache "$RUNNER_TEMP/cache"
+          xvfb-run -a python3 -B tools/linux_release.py check --stage "$RUNNER_TEMP/stage" --output "$RUNNER_TEMP/linux-verification.json"
+          python3 -B tools/linux_release.py package --stage "$RUNNER_TEMP/stage" --evidence "$RUNNER_TEMP/linux-verification.json" --output "$RUNNER_TEMP/dist"
+      - name: Attach to the release
+        run: gh release upload "$TAG" "$RUNNER_TEMP"/dist/* --repo "$GITHUB_REPOSITORY" --clobber
