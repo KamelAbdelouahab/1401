@@ -53,7 +53,7 @@ makes to their output lives in `p1401/` and is recorded per build as a named rul
 | Qt 6 + PySide6 / Shiboken6 (`PySide6-Essentials` wheel, unmodified, dynamically linked) | The Qt Company | LGPL-3.0 (license texts in `engine/python/lib/python3.12/site-packages/*.dist-info`); source at code.qt.io | The window |
 | certifi | Kenneth Reitz et al. | MPL-2.0 | Mozilla's CA list next to the system store |
 | `iasl` for Linux (corpnewt/linux_iasl, pinned by commit and SHA-256) | Intel ACPICA | dual BSD-3 / GPL-2 | Same role as `iasl.exe` on Windows |
-| libxcb-cursor, -icccm, -image, -keysyms, -render-util, -util, -xkb, libxkbcommon-x11 (Ubuntu 24.04 binaries) | freedesktop.org | MIT/X11 | Qt's X11 platform needs them; GTK desktops do not always install them |
+| libxcb-cursor, -icccm, -image, -keysyms, -render-util, -util, -xkb (Ubuntu 24.04 binaries) | freedesktop.org | MIT/X11 | Qt's X11 platform needs them; GTK desktops do not always install them |
 
 The Linux build is a modified version of 1401 under the terms above. Unless built with `"branded": true` by NullMoth
 Systems, it carries neither the NullMoth name as its own nor the moth logo; the `NullMoth` folder on the stick and the

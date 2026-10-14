@@ -20,7 +20,7 @@ fi
 LINKS="${XDG_CACHE_HOME:-$HOME/.cache}/1401/x11-fallback"
 use_links=
 for lib in libxcb-cursor.so.0 libxcb-icccm.so.4 libxcb-image.so.0 libxcb-keysyms.so.1 libxcb-render-util.so.0 \
-           libxcb-util.so.1 libxcb-xkb.so.1 libxkbcommon-x11.so.0; do
+           libxcb-util.so.1 libxcb-xkb.so.1; do
     found=
     for dir in /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64; do
         [ -e "$dir/$lib" ] && found=1 && break
@@ -32,6 +32,22 @@ for lib in libxcb-cursor.so.0 libxcb-icccm.so.4 libxcb-image.so.0 libxcb-keysyms
     fi
 done
 [ -n "$use_links" ] && export LD_LIBRARY_PATH="$LINKS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# libxkbcommon-x11 must match the system's libxkbcommon exactly (a bundled copy crashes Qt), so it is never bundled.
+# KDE and GNOME always have it. Without it, Qt can only use Wayland.
+found=
+for dir in /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64; do
+    [ -e "$dir/libxkbcommon-x11.so.0" ] && found=1 && break
+done
+if [ -z "$found" ]; then
+    if [ -n "$WAYLAND_DISPLAY" ]; then
+        export QT_QPA_PLATFORM=wayland
+    else
+        echo "1401 needs libxkbcommon-x11 to open its window on X11. Install it, then start 1401 again:" >&2
+        echo "  Debian/Ubuntu: sudo apt install libxkbcommon-x11-0     Arch/CachyOS: sudo pacman -S libxkbcommon-x11" >&2
+        command -v notify-send >/dev/null 2>&1 && notify-send "1401" "Install libxkbcommon-x11 (Debian: libxkbcommon-x11-0) and start 1401 again."
+        exit 1
+    fi
+fi
 if [ ! -x "$HERE/engine/python/bin/python3" ]; then
     echo "1401: the engine folder is missing next to this file (engine/python). Unpack the whole 1401 folder." >&2
     exit 1

@@ -20,8 +20,10 @@ parts that talk to the operating system differ. Tested on **Debian 13 (trixie)**
 4. The rest is the same as on Windows (README.md, "Using it").
 
 Nothing has to be installed first. The package brings its own Python 3.12, Qt 6, `iasl` and certificates. It uses the
-desktop's standard libraries (OpenGL/EGL, fontconfig, freetype, xkbcommon, Wayland or X11), which every KDE, GNOME,
-Xfce or other desktop install has. Optional: `pciutils`/`usbutils` (otherwise 1401 reads device names from sysfs and
+desktop's standard libraries (OpenGL/EGL, fontconfig, freetype, xkbcommon, Wayland or X11), which every KDE or GNOME
+install has. On X11 it also needs `libxkbcommon-x11` (it must match the system's xkbcommon, so it is not bundled); a
+desktop without it (some minimal Xfce/i3 setups) gets told to install `libxkbcommon-x11-0` (Debian) or
+`libxkbcommon-x11` (Arch/CachyOS). The xcb-util libraries Qt also needs are bundled and used only where missing. Optional: `pciutils`/`usbutils` (otherwise 1401 reads device names from sysfs and
 its own ID lists) and `dosfstools` (otherwise 1401 formats the stick with its own FAT32 formatter).
 
 ## What is different from Windows, and why

@@ -23,7 +23,7 @@ jobs:
         run: |
           pacman-key --init && pacman-key --populate || true
           pacman -Syu --noconfirm --needed python git binutils zstd xorg-server-xvfb xorg-xauth gdb which ttf-dejavu \
-            mesa libglvnd fontconfig freetype2 libxkbcommon dbus glib2 libx11 libxcb wayland
+            mesa libglvnd fontconfig freetype2 libxkbcommon libxkbcommon-x11 dbus glib2 libx11 libxcb wayland
           pacman -Q mesa libxcb libxkbcommon libx11 fontconfig freetype2 glibc xorg-server-xvfb || true
           grep -m1 -o 'avx512[a-z]*\|avx2' /proc/cpuinfo | sort -u || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -44,6 +44,7 @@ jobs:
           try "no GL integration" QT_XCB_GL_INTEGRATION=none
           try "offscreen" QT_QPA_PLATFORM=offscreen
           try "no X11 fallback libraries" XDG_CACHE_HOME=/nonexistent-cache
+          pacman -R --noconfirm libxkbcommon-x11 >/dev/null 2>&1; try "without libxkbcommon-x11 (expects the install hint)"; pacman -S --noconfirm libxkbcommon-x11 >/dev/null 2>&1
           try "software OpenGL" QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
       - name: Backtrace
         shell: bash

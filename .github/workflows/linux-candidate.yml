@@ -31,14 +31,14 @@ jobs:
               apt-get update
               apt-get install -y --no-install-recommends python3 git binutils zstd xvfb xauth dosfstools mtools util-linux \
                 ca-certificates gcc libc6-dev pciutils usbutils fonts-dejavu-core libgl1 libegl1 libfontconfig1 libfreetype6 \
-                libxkbcommon0 libdbus-1-3 libglib2.0-0 libx11-6 libx11-xcb1 libxcb1 libxcb-render0 libxcb-shape0 libxcb-shm0 \
+                libxkbcommon0 libxkbcommon-x11-0 libdbus-1-3 libglib2.0-0 libx11-6 libx11-xcb1 libxcb1 libxcb-render0 libxcb-shape0 libxcb-shm0 \
                 libxcb-sync1 libxcb-xfixes0 libxcb-randr0 libxcb-glx0 libwayland-client0 libwayland-cursor0 libwayland-egl1
           - name: CachyOS
             image: cachyos/cachyos:latest
             setup: |
               pacman-key --init && pacman-key --populate || true
               pacman -Syu --noconfirm --needed python git binutils zstd xorg-server-xvfb xorg-xauth dosfstools mtools \
-                util-linux gcc pciutils usbutils which ttf-dejavu mesa libglvnd fontconfig freetype2 libxkbcommon dbus glib2 \
+                util-linux gcc pciutils usbutils which ttf-dejavu mesa libglvnd fontconfig freetype2 libxkbcommon libxkbcommon-x11 dbus glib2 \
                 libx11 libxcb wayland
     container:
       image: ${{ matrix.image }}
@@ -85,7 +85,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Tools
-        run: sudo apt-get update && sudo apt-get install -y xvfb dosfstools zstd binutils libgl1 libegl1 libopengl0 libfontconfig1 libxkbcommon0 libdbus-1-3 libx11-xcb1 libxcb-render0 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb-randr0 libxcb-glx0 libwayland-client0 libwayland-cursor0 libwayland-egl1
+        run: sudo apt-get update && sudo apt-get install -y xvfb dosfstools zstd binutils libgl1 libegl1 libopengl0 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0 libdbus-1-3 libx11-xcb1 libxcb-render0 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb-randr0 libxcb-glx0 libwayland-client0 libwayland-cursor0 libwayland-egl1
       - name: Prepare, verify and package
         run: |
           python3 -B tools/linux_release.py prepare --stage "$RUNNER_TEMP/stage" --cache "$RUNNER_TEMP/cache"
