@@ -2,6 +2,12 @@ name: Linux window diagnostics (CachyOS)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - claude/funny-davinci-5spj6n
+    paths:
+      - '.github/workflows/linux-gui-debug.yml'
+      - 'linux/share/1401'
 
 permissions:
   contents: read
