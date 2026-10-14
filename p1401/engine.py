@@ -16,6 +16,7 @@ import copy
 import hashlib
 import json
 import os
+import platform
 import stat
 import time
 import urllib.parse
@@ -304,15 +305,19 @@ def network_help(url):
     host = urllib.parse.urlsplit(url).hostname or url
     return (f"1401 could not reach {host} (tried several times). The build downloads OpenCore and its drivers from GitHub, "
             "and this network blocks or resets those connections - common in mainland China and on some school or work "
-            "networks. Turn on a VPN, or a proxy set in Windows (Settings > Network & internet > Proxy - 1401 uses it), "
-            "then build again.")
+            "networks. Turn on a VPN, or " + ("a proxy (1401 uses the https_proxy setting of the session it runs in), "
+            if platform.system() == "Linux" else
+            "a proxy set in Windows (Settings > Network & internet > Proxy - 1401 uses it), ") + "then build again.")
 
 
 # 10-07 (PermissionError in ...\Downloads\Compressed\1401\...\OCK_Files, missing
 # efi\manifest.json): the engine keeps its downloads in OCK_Files beside its own code, so it rewrote files inside the
 # folder the user unpacked - which can be read-only or watched by antivirus - and 1.0.0-1.0.6 even shipped a stale copy of
 # that cache. On Windows it now lives in the user's writable app-data folder; the zip ships none.
+# On Linux the same reasoning puts it in the user's cache folder (~/.cache/1401), not the unpacked or installed app.
 OCK_CACHE = (os.path.join(os.environ["LOCALAPPDATA"], "NullMoth", "1401", "OCK_Files") if os.environ.get("LOCALAPPDATA")
+             else os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache"),
+                               "1401", "OCK_Files") if platform.system() == "Linux"
              else os.path.join(REPO, "upstream", "OpCore-Simplify", "OCK_Files"))
 
 

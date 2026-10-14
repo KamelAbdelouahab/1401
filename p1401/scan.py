@@ -191,6 +191,17 @@ def _sniffer_body(out_dir, token):
     h.u.head = lambda *a, **k: None  # it clears the console; a child has none
     if platform.system() == "Windows":
         h.check_acpidump = acpidump_path  # pinned copy, not its own download
+    if platform.system() == "Linux":
+        from . import linuxscan  # noqa: PLC0415
+        h.hardware_info.run = linuxscan.wrap_run(h.hardware_info.run)
+        if h.hardware_info.run.fallbacks:
+            print("Not installed: " + ", ".join(h.hardware_info.run.fallbacks) + "; device names come from sysfs and the "
+                  "bundled PCI/USB ID lists instead.", flush=True)
+
+        def dump_acpi_tables():   # replaces the Sniffer's `sudo cp`: this process already runs as root
+            names = linuxscan.dump_acpi(os.path.join(os.path.abspath(out_dir), "ACPI"))
+            print(f"ACPI: {len(names)} tables read from the firmware", flush=True)
+        h.dump_acpi_tables = dump_acpi_tables
     original_progress = h.hardware_info.utils.progress_bar
     def checkpoint_progress(*args, **kwargs):
         scan_evidence.save_partial(out_dir, token, getattr(h.hardware_info, "result", {}))
@@ -222,6 +233,11 @@ def _sniffer_body(out_dir, token):
 def _sniffer_child(out_dir, token):
     # Only the scan controller creates the fresh run receipt; this process adds sanitized partial sections.
     scan_evidence._current(out_dir, token)
+    if platform.system() == "Linux" and os.geteuid() != 0:
+        # the firmware's ACPI tables and some DMI fields are root-only; fail before writing a half report
+        print("Checking this PC needs administrator (root) rights on Linux: the ACPI tables are readable only by root. "
+              "Start the check from the 1401 window, which asks for your password, or run it with sudo.", file=sys.stderr)
+        return 1
     return _sniffer_body(out_dir, token)
 
 

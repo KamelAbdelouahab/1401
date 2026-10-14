@@ -45,6 +45,20 @@ makes to their output lives in `p1401/` and is recorded per build as a named rul
 | `acpidump.exe` (ACPICA R2024_12_12) | Intel ACPICA GitHub release | sha256 pinned in `p1401/scan.py`. ACPICA is dual BSD-3 / GPL-2. |
 | macOS recovery image | **Apple**, from `osrecovery.apple.com` to the user's own USB stick | Apple's RSA-signed chunklist, with every chunk hash-checked as it streams |
 
+## Linux package (`1401-Linux-*.tar.gz`, built by `tools/linux_release.py`, pinned in `linux/release-inputs.json`)
+
+| Component | From | License | Role |
+|---|---|---|---|
+| CPython 3.12 (python-build-standalone) | Python Software Foundation; build by Astral (`astral-sh/python-build-standalone`) | PSF-2.0 (bundled libraries keep theirs: OpenSSL Apache-2.0, SQLite public domain, zlib, ...) | Runs the window and the engine |
+| Qt 6 + PySide6 / Shiboken6 (`PySide6-Essentials` wheel, unmodified, dynamically linked) | The Qt Company | LGPL-3.0 (license texts in `engine/python/lib/python3.12/site-packages/*.dist-info`); source at code.qt.io | The window |
+| certifi | Kenneth Reitz et al. | MPL-2.0 | Mozilla's CA list next to the system store |
+| `iasl` for Linux (corpnewt/linux_iasl, pinned by commit and SHA-256) | Intel ACPICA | dual BSD-3 / GPL-2 | Same role as `iasl.exe` on Windows |
+| libxcb-cursor, -icccm, -image, -keysyms, -render-util, -util, -xkb, libxkbcommon-x11 (Ubuntu 24.04 binaries) | freedesktop.org | MIT/X11 | Qt's X11 platform needs them; GTK desktops do not always install them |
+
+The Linux build is a modified version of 1401 under the terms above. Unless built with `"branded": true` by NullMoth
+Systems, it carries neither the NullMoth name as its own nor the moth logo; the `NullMoth` folder on the stick and the
+NullMoth NVIDIA driver keep their names because the Mac companion looks for them.
+
 ## The NullMoth brand is not licensed
 
 The license covers 1401's software and nothing else. The names **NullMoth** and **NullMoth Systems** and the moth logo

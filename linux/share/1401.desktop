@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=1401
+GenericName=macOS installer stick builder
+Comment=Check this PC, build its OpenCore setup and write a macOS install stick
+Exec="@HOME@/1401"
+Path=@HOME@
+Icon=1401
+Terminal=false
+Categories=System;Utility;
+Keywords=macOS;OpenCore;Hackintosh;USB;
+StartupWMClass=1401

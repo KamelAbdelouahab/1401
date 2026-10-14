@@ -1,0 +1,33 @@
+{
+  "version": "1.1.0",
+  "arch": "x86_64",
+  "branded": false,
+  "python": {
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20251014/cpython-3.12.12%2B20251014-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "sha256": "1ab2b6594d1c3d76cbebea09d6bc3e6ba68d8eb3b6322080375c4cc3dd188f34"
+  },
+  "wheels": [
+    {"url": "https://files.pythonhosted.org/packages/py3/p/pyside6-essentials/pyside6_essentials-6.9.3-cp39-abi3-manylinux_2_28_x86_64.whl",
+     "pypi": "PySide6-Essentials==6.9.3", "name": "pyside6_essentials-6.9.3-cp39-abi3-manylinux_2_28_x86_64.whl",
+     "sha256": "c70d5544e892b201a677b615156fab6a0fef865e7fc287f55a0eae00a682e83f"},
+    {"pypi": "shiboken6==6.9.3", "name": "shiboken6-6.9.3-cp39-abi3-manylinux_2_28_x86_64.whl",
+     "sha256": "f3f5337a3a8fc660ba1462265bd9a2bdda9588f8d90fbc3d5ac4ce3134c11e59"},
+    {"pypi": "certifi==2026.7.22", "name": "certifi-2026.7.22-py3-none-any.whl",
+     "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"}
+  ],
+  "iasl": {
+    "url": "https://raw.githubusercontent.com/corpnewt/linux_iasl/977868eb67698a0e1632c53cff6b7bcfa19a2f1a/iasl.zip",
+    "sha256": "618d35e4948ad765a1d66227b0887f8baa483f8e4460183de466b45217612aeb"
+  },
+  "x11_fallback_libraries": [
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/universe/x/xcb-util-cursor/libxcb-cursor0_0.1.4-1build1_amd64.deb", "sha256": "137cf52479b5a9d8c5926d70d311af04be41941a32ee777340d704cc458c06d8"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xcb-util-wm/libxcb-icccm4_0.4.1-1.1build3_amd64.deb", "sha256": "9e0e349f3904cd5bc07fea45498c4d03527a5d1178edd78555e84fdbd3793708"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xcb-util-image/libxcb-image0_0.4.0-2build1_amd64.deb", "sha256": "6af300eeef5523aa0d8dbfab3a23c1fe7006ecc19f8abdc5c636d734d7bb5287"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xcb-util-keysyms/libxcb-keysyms1_0.4.0-1build4_amd64.deb", "sha256": "6c261aae923175b88a032018c530873ffb40f2bf96b045fdda42bd8bc74cb1c3"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xcb-util-renderutil/libxcb-render-util0_0.3.9-1build4_amd64.deb", "sha256": "95d895ceb921e38e4edd85555b407b1a0564d8ad097ec7566e261764ce27787b"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xcb-util/libxcb-util1_0.4.0-1build3_amd64.deb", "sha256": "b6ff05729519514bddcbcd460f8be7e55c986daa5a97ecdc612b2815614194ab"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/libx/libxcb/libxcb-xkb1_1.15-1ubuntu2_amd64.deb", "sha256": "53bc0a58834c981fa8ce5c3ab6195387e5c8a417039d82cc7a8b49724fa53228"},
+    {"url": "https://archive.ubuntu.com/ubuntu/pool/main/libx/libxkbcommon/libxkbcommon-x11-0_1.6.0-1build1_amd64.deb", "sha256": "3befe840ce612ddfc0998d8610c6eed295726722a78e75cd08520bbd75065a23"}
+  ],
+  "companion_inputs": "windows/release-inputs.json"
+}

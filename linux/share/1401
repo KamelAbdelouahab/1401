@@ -1,0 +1,21 @@
+#!/bin/sh
+# 1401 for Linux. Keep the whole 1401 folder together and run this file (double-click, or ./1401 in a terminal).
+# It asks for your password only for the two steps that need it: reading this PC's ACPI tables, and erasing the stick.
+HERE=$(dirname "$(readlink -f "$0")")
+export A1401_HOME="$HERE"
+export PYTHONPATH="$HERE/app"
+export PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1
+unset PYTHONHOME
+if [ -z "$QT_QPA_PLATFORM" ]; then
+    case "${XDG_CURRENT_DESKTOP:-}" in
+        # GNOME draws no title bar for Qt's Wayland windows; its X11 bridge does
+        *GNOME*|*gnome*) QT_QPA_PLATFORM="xcb;wayland" ;;
+        *) if [ -n "$WAYLAND_DISPLAY" ]; then QT_QPA_PLATFORM="wayland;xcb"; else QT_QPA_PLATFORM="xcb"; fi ;;
+    esac
+    export QT_QPA_PLATFORM
+fi
+if [ ! -x "$HERE/engine/python/bin/python3" ]; then
+    echo "1401: the engine folder is missing next to this file (engine/python). Unpack the whole 1401 folder." >&2
+    exit 1
+fi
+exec "$HERE/engine/python/bin/python3" -m a1401 "$@"

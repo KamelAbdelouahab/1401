@@ -1,4 +1,4 @@
-"""Writes the 1401 installer USB on Windows: GPT, one FAT32 partition, EFI/ and com.apple.recovery.boot/.
+"""Writes the 1401 installer USB on Windows or Linux: one FAT32 partition, EFI/ and com.apple.recovery.boot/.
 
 This is the only part of 1401 that erases anything, so all the safety checks live here and not in the UI:
   - USB only. Never the boot disk, the system disk, an offline or read-only disk, or anything under 2 GiB.
@@ -9,7 +9,8 @@ This is the only part of 1401 that erases anything, so all the safety checks liv
 Layout follows Dortania's Windows guide (diskpart clean / convert gpt / create partition primary / format fs=fat32).
 The partition is capped at 16 GiB since Windows won't format FAT32 over 32 GiB. EFI + recovery need about 1 GiB.
 
-NOT TESTED ON WINDOWS YET. So far the script and its checks have only been tested on macOS against fake disks.
+On Linux the same checks and the same MBR + FAT32 layout come from p1401/linuxdisk.py (lsblk, O_EXCL, the kernel's
+vfat driver); a Linux disk is named by its kernel name (sdb) instead of a Windows disk number.
 """
 import json
 import os
@@ -46,6 +47,9 @@ def _ps(script):
 
 
 def list_disks():
+    if platform.system() == "Linux":
+        from . import linuxdisk  # noqa: PLC0415
+        return linuxdisk.list_disks()
     out = _ps(f"Get-Disk | Select-Object {FIELDS} | ConvertTo-Json -Compress")
     d = json.loads(out or "[]")
     return d if isinstance(d, list) else [d]
@@ -193,6 +197,8 @@ def write(disk, efi_build_dir, recovery_info, allow_large=False, progress=None, 
         from . import machine_handoff
         if machine_handoff.verified(efi_build_dir) != machine_profile:
             raise UsbError('The machine profile changed before erasing the stick. Rebuild the EFI.')
+    if disk.get("Backend") == "linux":
+        return _write_linux(disk, efi_build_dir, recovery_info, progress, machine_profile)
     _ps(check_script(disk))
     from . import rawdisk  # noqa: PLC0415
     n = int(disk["Number"])
@@ -226,6 +232,54 @@ Format-Volume -DriveLetter {letter} -FileSystem FAT32 -NewFileSystemLabel '{LABE
     if machine_profile is not None:
         machine_handoff.copy_to_installer(machine_profile, root)
     return {"root": root, "nullmoth": driver, **got}
+
+
+def _write_linux(disk, efi_build_dir, recovery_info, progress=None, machine_profile=None):
+    """The Linux erase and write. The stick stays mounted at res["root"] until finish(res) unmounts it."""
+    from . import apple, linuxdisk  # noqa: PLC0415
+    say = lambda m: print(m, flush=True)  # noqa: E731
+    try:
+        now = linuxdisk.recheck(disk)
+    except linuxdisk.DiskError as e:
+        raise UsbError(str(e)) from None
+    try:
+        part, start, _, sector = linuxdisk.erase(now, PART_CAP, say=say)
+        linuxdisk.mkfs(part, LABEL, start, sector, say=say)
+        root = linuxdisk.mount(part)
+    except linuxdisk.DiskError as e:
+        raise UsbError(str(e)) from None
+    res = {"root": root, "unmount": root, "partition": part}
+    try:
+        got = apple.download(recovery_info, root, progress)
+        shutil.copytree(os.path.join(efi_build_dir, "EFI"), os.path.join(root, "EFI"))
+        verify_efi_copy(os.path.join(efi_build_dir, 'EFI'), os.path.join(root, 'EFI'))
+        driver = None
+        if needs_nullmoth(efi_build_dir):
+            from . import nullmoth  # noqa: PLC0415
+            cache = os.path.join(efi_build_dir, ".cache")
+            os.makedirs(cache, exist_ok=True)
+            driver = nullmoth.stage(root, cache, fetch=_fetch)
+        if machine_profile is not None:
+            from . import machine_handoff  # noqa: PLC0415
+            machine_handoff.copy_to_installer(machine_profile, root)
+    except BaseException:
+        try:
+            linuxdisk.unmount(root, say=say)
+        except Exception:  # noqa: BLE001 - the original failure is the one to report
+            pass
+        raise
+    res.update({"nullmoth": driver, **got})
+    return res
+
+
+def finish(res):
+    """Linux: flush and unmount the stick once everything is on it. Windows leaves the drive letter in place."""
+    if res.get("unmount"):
+        from . import linuxdisk  # noqa: PLC0415
+        try:
+            linuxdisk.unmount(res["unmount"], say=lambda m: print(m, flush=True))
+        except linuxdisk.DiskError as e:
+            raise UsbError(str(e)) from None
 
 
 def verify_efi_copy(source, destination):
@@ -306,12 +360,17 @@ def selftest():
         fired = True
     arm("format_script itself refuses the boot disk, not just the UI", fired, "refused" if fired else "SCRIPT MADE")
     try:
-        list_disks()
-        ran = platform.system() == "Windows"
+        listed = list_disks()
+        ran = platform.system() in ("Windows", "Linux") and isinstance(listed, list)
     except UsbError as e:
-        ran = "Windows only" in str(e)
-    arm("refuses to run when not on Windows", ran, platform.system())
-    scope = "read-only Windows disk discovery; no disk writes" if platform.system() == "Windows" else "logic checks; Windows disk discovery not exercised"
+        ran = platform.system() not in ("Windows", "Linux") and "Windows only" in str(e)
+    except Exception as e:  # noqa: BLE001 - lsblk missing on a Linux without util-linux
+        ran = False
+        print("disk discovery failed:", e)
+    arm("lists disks on Windows and Linux, refuses elsewhere", ran, platform.system())
+    scope = ("read-only Windows disk discovery; no disk writes" if platform.system() == "Windows" else
+             "logic checks + read-only Linux disk discovery (lsblk); no disk writes" if platform.system() == "Linux" else
+             "logic checks; disk discovery not exercised")
     print(f"\n{sum(res)}/{len(res)} passed ({scope})")
     return all(res)
 
@@ -320,9 +379,13 @@ def cli_write(argv):
     """write <disk number> <EFI build dir> <darwin major> [--driver <tar.gz>] [--extra <file>]... [--profile <Report.json>] [--allow-large]
     The Windows app's write step. Every line printed is "STEP|OK|PROGRESS|STOP ..." so the window can show it."""
     from . import apple, nullmoth  # noqa: PLC0415
-    num, efi, darwin = int(argv[0]), argv[1], int(argv[2])
+    linux = platform.system() == "Linux"
+    num, efi, darwin = (argv[0] if linux else int(argv[0])), argv[1], int(argv[2])
     def opt(n): return [argv[i + 1] for i, a in enumerate(argv) if a == n and i + 1 < len(argv)]
-    disk = next((d for d in list_disks() if int(d.get("Number", -1)) == num), None)
+    if linux:
+        disk = next((d for d in list_disks() if str(num) in (str(d.get("Number")), d.get("Path"))), None)
+    else:
+        disk = next((d for d in list_disks() if int(d.get("Number", -1)) == num), None)
     if not disk:
         print(f"STOP disk {num} is not attached any more"); return 1
     ok, why = eligible(disk, "--allow-large" in argv)
@@ -348,12 +411,21 @@ def cli_write(argv):
     print(f"STEP erasing and writing disk {num} ({disk.get('FriendlyName')})", flush=True)
     res = write(disk, efi, info, allow_large="--allow-large" in argv, progress=progress, machine_profile=handoff)
     root = res["root"]
-    print('OK verified build profile written to the stick (live identity remains unverified)', flush=True)
-    for f in opt("--extra"):
-        d = os.path.join(root, "NullMoth"); os.makedirs(d, exist_ok=True)
-        shutil.copyfile(f, os.path.join(d, os.path.basename(f)))
-        print(f"OK copied {os.path.basename(f)} to the stick", flush=True)
-    print(f"OK the stick is ready at {root}" + (" (NVIDIA driver included)" if res.get("nullmoth") else ""), flush=True)
+    try:
+        print('OK verified build profile written to the stick (live identity remains unverified)', flush=True)
+        for f in opt("--extra"):
+            d = os.path.join(root, "NullMoth"); os.makedirs(d, exist_ok=True)
+            shutil.copyfile(f, os.path.join(d, os.path.basename(f)))
+            print(f"OK copied {os.path.basename(f)} to the stick", flush=True)
+    except BaseException:
+        try:
+            finish(res)   # Linux: never leave the half-written stick mounted in a private folder
+        except Exception:  # noqa: BLE001 - the copy failure is the one to report
+            pass
+        raise
+    where = disk.get("Path") if res.get("unmount") else root
+    finish(res)
+    print(f"OK the stick is ready at {where}" + (" (NVIDIA driver included)" if res.get("nullmoth") else ""), flush=True)
     return 0
 
 

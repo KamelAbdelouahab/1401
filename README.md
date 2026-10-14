@@ -7,6 +7,7 @@ Made by **NullMoth Systems**. Support the work: https://buymeacoffee.com/nullmot
 | Download (Releases) | What it is |
 |---|---|
 | `1401-Windows-1.0.24.zip` | the Windows app: checks your PC, builds its OpenCore setup, writes a macOS install stick |
+| `1401-Linux-1.1.0-x86_64.tar.gz` | the same app for Linux (tested on Debian 13 and CachyOS): unpack, run `./1401` - see [`docs/LINUX.md`](docs/LINUX.md) |
 | `1401-Mac-1.0.18.dmg` (in the [driver repo](https://github.com/nullmoth/nvidia-macos-driver) releases) | the Mac installer for the NVIDIA driver: open it and run **1401**; the helper package is a separate verified download or the copy staged on the USB stick |
 
 > **1401 is new and may not work on every PC.** It has been tested end to end on one PC (Intel Core Ultra 5 225F,
@@ -19,6 +20,9 @@ How the code works, step by step: [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md)
 Maintenance changes: [`Windows 1.0.24 companion refresh`](docs/RELEASE-1.0.24.md).
 
 ## Using it
+
+On Linux: unpack `1401-Linux-1.1.0-x86_64.tar.gz`, run `1401/1401` (`./install.sh` adds a menu entry), and follow the
+same steps below; it asks for your password to read the ACPI tables and to erase the stick. Details: [`docs/LINUX.md`](docs/LINUX.md).
 
 1. Unzip `1401-Windows-1.0.24.zip` and keep the `1401` folder together. Run `1401.exe` (it asks for administrator
    rights: it reads the hardware and writes the stick).
@@ -61,6 +65,9 @@ python3 tests/run_corpus.py build      # build + rules + ocvalidate for every ma
 python3 -m p1401.selftest && python3 -m p1401.guide --selftest && python3 -m p1401.apple --selftest \
   && python3 -m p1401.usbwriter --selftest && python3 -m p1401.scan --selftest && python3 -m p1401.nullmoth --selftest
 ```
+
+Linux: `P1401_LOOP_TESTS=1 python3 -m unittest tests.test_linuxdisk` (as root) erases and formats a loop device, and
+`./1401 --verify-package result.json` checks a packaged Linux app.
 
 `loader/` is an experimental UEFI boot layer (Rust) tested in QEMU only. The app does not use it; sticks boot with
 OpenCore.

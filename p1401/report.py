@@ -6,6 +6,7 @@ Example from the corpus (z490-vision-g): a Focusrite USB interface with Bus Type
 USB audio is class-compliant (macOS drives it without a kext), so it never ends up in the EFI anyway.
 """
 import json
+import re
 import os
 import hashlib
 import copy
@@ -91,6 +92,9 @@ def diagnostic_hardware(report):
     return result
 
 
+ACPI_PATH = re.compile(r"^[\\]?_SB(\.[A-Z0-9_]+)+$")
+
+
 def normalize(report):
     """Mutates and returns (report, notes). Each note names what was dropped and why."""
     notes = []
@@ -128,6 +132,18 @@ def normalize(report):
             raise RuntimeError(f"The only graphics card Windows reports is {name!r}, with no maker or PCI ID: Windows has no "
                                "driver for it. Install your graphics card's driver in Windows (from NVIDIA, AMD or Intel), "
                                "restart, and run Check this PC again.")
+    # Hardware Sniffer on Linux reads each device's ACPI path from sysfs, which also names devices outside the system
+    # bus (thermal zones \_TZ_.TZ0_, \HPET, WMI blocks at the root). The engine's schema only accepts \_SB paths and
+    # rejected the whole report. The path is optional and the engine only looks devices up under \_SB, so the
+    # out-of-scope path is left out and the device kept.
+    for section, devices in report.items():
+        if not isinstance(devices, dict):
+            continue
+        for name, props in devices.items():
+            path = props.get("ACPI Path") if isinstance(props, dict) else None
+            if isinstance(path, str) and not ACPI_PATH.match(path):
+                del props["ACPI Path"]
+                notes.append(f"{section}: {name!r} sits at {path!r}, outside the system bus - its ACPI path is not used")
     for section, may_drop in DROPPABLE.items():
         for name, props in list((report.get(section) or {}).items()):
             if isinstance(props, dict) and "Device ID" not in props and may_drop(props):
