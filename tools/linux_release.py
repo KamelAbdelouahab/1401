@@ -314,7 +314,8 @@ def check(args):
         checks[name] = {"ok": bool(passed), "tail": (p.stdout + p.stderr)[-1500:]}
         print(("ok   " if passed else "FAIL ") + name)
         if not passed:
-            print("     " + (p.stdout + p.stderr)[-3000:].replace("\n", "\n     "))
+            print(f"     exit code {p.returncode}")
+            print("     " + (p.stdout + p.stderr)[-6000:].replace("\n", "\n     "))
         return p
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -322,7 +323,12 @@ def check(args):
                                  "print(ssl.OPENSSL_VERSION)"])
         result = Path(tmp) / "verify.json"
         p = step("window --verify-package", [str(root / "1401"), "--verify-package", str(result)],
-                 extra={"XDG_DATA_HOME": tmp})
+                 extra={"XDG_DATA_HOME": tmp, "PYTHONFAULTHANDLER": "1"})
+        if p.returncode != 0:
+            # the same run with Qt's plugin loader talking, to show which library or plugin stopped it
+            step("window diagnostics (QT_DEBUG_PLUGINS)", [str(root / "1401"), "--verify-package", str(result)],
+                 extra={"XDG_DATA_HOME": tmp, "PYTHONFAULTHANDLER": "1", "QT_DEBUG_PLUGINS": "1"}, ok=lambda p: True)
+            print("     " + checks["window diagnostics (QT_DEBUG_PLUGINS)"]["tail"][-6000:].replace("\n", "\n     "))
         try:
             checks["window --verify-package"]["result"] = json.loads(result.read_text())
             checks["window --verify-package"]["ok"] &= checks["window --verify-package"]["result"].get("ok") is True
