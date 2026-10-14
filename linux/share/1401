@@ -14,6 +14,19 @@ if [ -z "$QT_QPA_PLATFORM" ]; then
     esac
     export QT_QPA_PLATFORM
 fi
+# Qt's X11 support needs the xcb-util libraries. KDE and GNOME installs have them; some GTK desktops do not. The
+# package carries a matching set, used only when the system lacks one of them.
+for lib in libxcb-cursor.so.0 libxcb-icccm.so.4 libxcb-image.so.0 libxcb-keysyms.so.1 libxcb-render-util.so.0 \
+           libxcb-util.so.1 libxcb-xkb.so.1 libxkbcommon-x11.so.0; do
+    found=
+    for dir in /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64; do
+        [ -e "$dir/$lib" ] && found=1 && break
+    done
+    if [ -z "$found" ]; then
+        export LD_LIBRARY_PATH="$HERE/engine/x11-fallback${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        break
+    fi
+done
 if [ ! -x "$HERE/engine/python/bin/python3" ]; then
     echo "1401: the engine folder is missing next to this file (engine/python). Unpack the whole 1401 folder." >&2
     exit 1

@@ -13,6 +13,7 @@ The folder it makes is the Linux counterpart of the Windows zip:
       engine/python/        Python 3.12 (python-build-standalone) with PySide6 and certifi, pruned to what 1401 uses
       engine/app/p1401/     the engine                                                 [p1401/]
       engine/app/upstream/  OpCore-Simplify and Hardware Sniffer (pinned), Scripts/iasl for Linux (pinned)
+      engine/x11-fallback/  xcb-util libraries Qt's X11 support needs, used only where the system has none
       NullMoth/             the NVIDIA driver package and the 1401 Mac app (copied to the stick)
 """
 import argparse
@@ -184,7 +185,7 @@ def prune_qt(site):
                 keep.add(n)
                 todo.append(libdir / n)
     for p in libdir.iterdir():
-        if p.name not in keep and not p.name.startswith(("libxcb-", "libxkbcommon-x11")):
+        if p.name not in keep:
             shutil.rmtree(p) if p.is_dir() else p.unlink()
 
 
@@ -229,10 +230,14 @@ def prepare(args):
     prune_python(py)
     prune_qt(site)
     # X11 fallback libraries: Qt's xcb platform needs xcb-util pieces that GTK desktops do not always install
+    # (in their own folder: they find each other only through LD_LIBRARY_PATH, which the launcher sets when the
+    # system lacks any of them)
     debs = cache / "debs"
+    fallback = root / "engine" / "x11-fallback"
+    fallback.mkdir()
     for d in inputs["x11_fallback_libraries"]:
         deb = download(d["url"], d["sha256"], debs / d["url"].rsplit("/", 1)[1])
-        extract_deb_libs(deb, site / "PySide6" / "Qt" / "lib")
+        extract_deb_libs(deb, fallback)
     strip([py / "lib" / ("libpython" + PYV + ".so.1.0")])
 
     # Engine
