@@ -12,7 +12,8 @@ tar xzf 1401-Linux-1.1.0-x86_64.tar.gz
 ./1401/install.sh        # optional: adds 1401 to your application menu
 ```
 
-Nothing to install first: Python 3.12, Qt 6, `iasl` and certificates come with it. The scan and the stick write ask for
+Nothing to install first on a KDE or GNOME desktop: Python 3.12, Qt 6, `iasl` and certificates come with it (on X11
+without `libxkbcommon-x11`, 1401 names the package to install). The scan and the stick write ask for
 your password (polkit, or sudo when `pkexec` is missing). The NVIDIA driver package and the 1401 Mac app (Mac 1.1.0)
 are included in `NullMoth/`, as in the Windows package.
 
@@ -28,9 +29,10 @@ are included in `NullMoth/`, as in the Windows package.
 
 ## Verified
 
-Unit tests with the packaged Python in Debian 13 and CachyOS images (including a real loop-device erase), the packaged
-window's `--verify-package` check in both, planning over the 15-machine public corpus, and the full stick write in a
-VM with an emulated USB stick checked by `fsck.fat`. Not verified here: a physical PC's firmware, a physical stick, and
+On Debian 13 and CachyOS (containers with each distribution's own packages, GitHub Actions): 334 unit tests with the
+packaged Python including a real loop-device erase, the packaged window's `--verify-package` check, and full EFI builds
+of 11 public hardware reports, every config passing OpenCore's `ocvalidate`. The complete stick write ran in a VM with
+an emulated USB stick (both FAT32 formatters), checked by `fsck.fat`. Not verified here: a physical PC's firmware, a physical stick, and
 Apple's recovery download (unchanged engine code).
 
 This is a modified build of 1401 under PolyForm Noncommercial 1.0.0; it is not made or endorsed by NullMoth Systems.

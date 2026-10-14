@@ -63,8 +63,10 @@ optional paths and notes it in the build log.
 - The complete stick write (`p1401.usbwriter write`) in a VM with an emulated USB mass-storage stick: discovery over
   USB, refusing the system disk, erase, partition table, both FAT32 formatters, the kernel's vfat mount, copy,
   read-back verification, unmount; the result checked with `fsck.fat`.
-- `.github/workflows/linux-candidate.yml` builds the package and runs full EFI builds (downloads + `ocvalidate`) on
-  Debian 13 and CachyOS.
+- `.github/workflows/linux-candidate.yml`, in Debian 13 and CachyOS containers with each distribution's own packages:
+  the unit tests with the packaged Python (loop-device erase included), the packaged window check, and full EFI builds
+  of the 11 corpus machines that carry an ACPI dump (OpenCore, kexts and `iasl` downloaded, every config passing
+  OpenCore's `ocvalidate` with no issues).
 
 Not tested here: a real PC's firmware and a physical stick end to end, and Apple's recovery download from Linux (the
 same `p1401/apple.py` the Windows app uses). Run **Check this PC** and send the logs if something fails.
