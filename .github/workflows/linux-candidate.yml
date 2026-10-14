@@ -61,10 +61,13 @@ jobs:
       - name: Engine and writer tests with the packaged Python (loop-device erase included)
         run: P1401_LOOP_TESTS=1 /tmp/stage/1401/engine/python/bin/python3 -B -m unittest discover -s tests -t . -p 'test_*.py'
       - name: Fetch the public hardware corpus
+        if: ${{ !cancelled() }}
         run: python3 -B tests/corpus/fetch.py
       - name: Packaged window and engine checks
+        if: ${{ !cancelled() }}
         run: xvfb-run -a python3 -B tools/linux_release.py check --stage /tmp/stage --output /tmp/linux-verification.json
       - name: Full EFI builds over the corpus (downloads, iasl, ocvalidate) with the packaged Python
+        if: ${{ !cancelled() }}
         run: |
           /tmp/stage/1401/engine/python/bin/python3 -B tests/run_corpus.py build | tee /tmp/corpus.txt
           ok=$(grep -cE '^[a-z0-9-]+ +OK ' /tmp/corpus.txt || true)
