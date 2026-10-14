@@ -15,7 +15,10 @@ if [ -z "$QT_QPA_PLATFORM" ]; then
     export QT_QPA_PLATFORM
 fi
 # Qt's X11 support needs the xcb-util libraries. KDE and GNOME installs have them; some GTK desktops do not. The
-# package carries a matching set, used only when the system lacks one of them.
+# package carries a matching set; only the ones this system lacks are put on the library path, one by one, so a
+# system library is never replaced by an older bundled copy.
+LINKS="${XDG_CACHE_HOME:-$HOME/.cache}/1401/x11-fallback"
+use_links=
 for lib in libxcb-cursor.so.0 libxcb-icccm.so.4 libxcb-image.so.0 libxcb-keysyms.so.1 libxcb-render-util.so.0 \
            libxcb-util.so.1 libxcb-xkb.so.1 libxkbcommon-x11.so.0; do
     found=
@@ -23,10 +26,12 @@ for lib in libxcb-cursor.so.0 libxcb-icccm.so.4 libxcb-image.so.0 libxcb-keysyms
         [ -e "$dir/$lib" ] && found=1 && break
     done
     if [ -z "$found" ]; then
-        export LD_LIBRARY_PATH="$HERE/engine/x11-fallback${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-        break
+        mkdir -p "$LINKS" && ln -sf "$HERE/engine/x11-fallback/$lib" "$LINKS/$lib" && use_links=1
+    else
+        rm -f "$LINKS/$lib" 2>/dev/null
     fi
 done
+[ -n "$use_links" ] && export LD_LIBRARY_PATH="$LINKS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 if [ ! -x "$HERE/engine/python/bin/python3" ]; then
     echo "1401: the engine folder is missing next to this file (engine/python). Unpack the whole 1401 folder." >&2
     exit 1
