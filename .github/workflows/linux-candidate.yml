@@ -82,7 +82,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Tools
-        run: sudo apt-get update && sudo apt-get install -y xvfb dosfstools zstd binutils libxcb-cursor0 libxkbcommon-x11-0
+        run: sudo apt-get update && sudo apt-get install -y xvfb dosfstools zstd binutils libgl1 libegl1 libopengl0 libfontconfig1 libxkbcommon0 libdbus-1-3
       - name: Prepare, verify and package
         run: |
           python3 -B tools/linux_release.py prepare --stage "$RUNNER_TEMP/stage" --cache "$RUNNER_TEMP/cache"

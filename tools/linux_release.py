@@ -308,6 +308,8 @@ def check(args):
         passed = ok(p)
         checks[name] = {"ok": bool(passed), "tail": (p.stdout + p.stderr)[-1500:]}
         print(("ok   " if passed else "FAIL ") + name)
+        if not passed:
+            print("     " + (p.stdout + p.stderr)[-3000:].replace("\n", "\n     "))
         return p
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -321,6 +323,8 @@ def check(args):
             checks["window --verify-package"]["ok"] &= checks["window --verify-package"]["result"].get("ok") is True
         except (OSError, ValueError):
             checks["window --verify-package"]["ok"] = False
+        if not checks["window --verify-package"]["ok"]:
+            print("     result:", checks["window --verify-package"].get("result"))
         app = root / "engine" / "app"
         step("usbwriter selftest", [str(python), "-m", "p1401.usbwriter", "--selftest"], cwd=app)
         img = Path(tmp) / "fat.img"
